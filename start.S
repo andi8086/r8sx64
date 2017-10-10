@@ -38,6 +38,7 @@ start:
     mov es, ax
     mov ss, ax
     mov sp, 8192
+
     sti
     mov di, 0
     mov si, 0
@@ -51,11 +52,22 @@ start:
 
 main:
     cli
+
     mov ax, es 
     mov ds, ax
     sti
     call enable_a20
     call load_kernel
+
+    push ds
+    mov ax, 0
+    mov ds, ax    
+wait_floppy_motor_off:
+    # read time remaining until motor off
+    mov al, [0x440]
+    test al, al
+    jnz wait_floppy_motor_off
+    pop ds
     cli   
  
     # mask interrupts in PICs
@@ -74,11 +86,12 @@ main:
     mov gdt_lw, ax
     mov gdt_hw, dx
     lgdt ds:[gdt_descriptor]
+
     mov eax, cr0
     or al, 1
     mov cr0, eax
-    
-    # 32-bit far call to 0008:00000100
+   
+    # 32-bit far call to 0008:00000500
     .byte 0x66
     .byte 0xea
     .word 0x500
@@ -189,11 +202,14 @@ gdt:
 gdtentry0:  .word 0, 0
             .word 0, 0
 
-gdtentry1:  .word 0xFFFF, 0x0000
-            .byte 0, 0b10011001, 0b11001111, 0
+gdtentry1:  .word 0x5FFF, 0x0000
+            .byte 0, 0b10011001, 0b01000000, 0
 
 gdtentry2:  .word 0xFFFF, 0x0000
             .byte 0, 0b10010011, 0b11001111, 0
+
+gdtentry_ss: .word 0x5FFF, 0x7C00
+             .byte 0, 0b10010111, 0b01000000, 0
 
 gdt_size = $ - gdt
 
