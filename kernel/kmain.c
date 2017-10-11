@@ -1,17 +1,21 @@
 #include <stdint.h>
-#include "idt.h"
+#include <idt.h>
+#include <realcall.h>
+#include <video.h>
 
-extern void realcall(void); 
+extern void realcall(realcall_t *rcall);
 
 extern void load_page_dir(void *page_dir);
 extern void enable_paging(void);
-
 
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 uint32_t first_page_table[1024] __attribute__((aligned(4096)));
 
 idt_desc_t idt_desc;
 idt_entry_t idt[33];
+
+realcall_t rcall;
+p_set_video_mode_t psvm;
 
 void setup_idt(void)
 {
@@ -56,7 +60,21 @@ void kmain(void)
     
     setup_idt();
     load_idt(&idt_desc);
-    realcall();
+
+    psvm.video_mode = 0x93;
+    rcall.realfunc = set_video_mode;
+    rcall.params = &psvm;
+    realcall(&rcall);
+
+    for (uint16_t i = 0; i < 320; i++) {
+        for (uint16_t j = 0; j < 200; j++) {
+            gd_put_pixel(i, j, 0xAA);
+        }
+    }
+
+    rcall.realfunc = print_video_text;
+    realcall(&rcall);
+
     asm("int $0x20");
     while(1);
 

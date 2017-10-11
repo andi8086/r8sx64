@@ -42,6 +42,7 @@
 
 .extern kmain
 .extern idt_desc
+.extern pic_init_32
 
 _start:
     mov eax, 0x10
@@ -69,15 +70,24 @@ _hold:
     jmp _hold
 
 realcall:
+    push ebp
+    mov ebp, esp
+
+    # 1st param is pointer to real_call_t struct
+    # which as function offset to call as 1st element
+    mov eax, [esp+8]
+    mov edi, [eax]  # pointer to function
+    add eax, 4 # pointer to params
+    mov esi, [eax]
+
     pushad
     push es
-    
+
+    cli
+
     mov eax, esp
     mov [stack_pointer], eax
 
-    # Disable IRQs
-    # TODO
-    
     jmp 0x20:realcall16
 
 retfromrealcall16:
@@ -96,8 +106,13 @@ retfromrealcall16:
     mov eax, offset idt_desc
     lidt [eax]
 
+    call pic_init_32
+
     pop es
     popad
+
+    mov esp, ebp
+    pop ebp
     ret
 
 load_page_dir:

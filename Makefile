@@ -3,7 +3,7 @@ COMPILEFLAGS = -fno-pie -m32 -Wl,-N -ffreestanding -nostdlib
 CFLAGS = -I kernel/include $(COMPILEFLAGS)
 ASFLAGS = --32 -march=i386
 
-KOBJS = main.o kmain.o kernel16.o
+KOBJS = main.o kmain.o kernel16.o pic8259.o video16.o video.o
 
 all: image
 

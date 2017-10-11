@@ -5,32 +5,38 @@
 
 .extern retfromrealcall16
 .extern k_gdt_descriptor
+.extern pic_init_real
+.extern pic_mask_all_real
 
 realcall16:
+    # real mode function offset is in EDI
 
     # here we are in 16-bit protected mode
     # return to real mode
-
+    cli
 
     mov eax, 0x28
     mov ds, eax
     mov es, eax
     mov ss, eax
     mov fs, eax
-    mov gs, eax      
-    
+    mov gs, eax
+
+    # push new CS
     mov ax, 0
     push ax 
 
     mov bx, offset enter_realmode
     push bx
-    
+
     mov eax, cr0
     and eax, 0x7FFFFFFF
     mov cr0, eax
     and al, 0xFE
     mov cr0, eax
-    retf    
+
+    # will return to 0x0000:enter_realmode
+    retf
 
 enter_realmode:
 
@@ -42,17 +48,24 @@ enter_realmode:
     mov ss, ax
     mov sp, 0x1000
 
+    call pic_init_real
+
     mov eax, offset r_idt_descriptor
     lidt [eax]
 
     # do real mode stuff here
+    sti
 
-    # video mode 12, + 0x80 for keeping screen
-    mov al, 0x92
-    mov ah, 0
-    int 0x10
+    mov ax, di
+    # SI is pointer to parameters
+    call ax
 
     # return to protected mode
+
+    cli
+
+    # mask all IRQs
+    call pic_mask_all_real
 
     lgdt [k_gdt_descriptor]
 
