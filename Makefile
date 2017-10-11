@@ -1,24 +1,29 @@
+COMPILEFLAGS = -fno-pie -m32 -Wl,-N -ffreestanding -nostdlib
+
+CFLAGS = -I kernel/include $(COMPILEFLAGS)
+ASFLAGS = --32 -march=i386
+
+KOBJS = main.o kmain.o kernel16.o
+
 all: image
 
-boot.bin: boot.elf
-	objcopy -O binary -j .text boot.elf boot.bin
+%.bin: %.elf
+	objcopy -O binary -j .text $^ $@
 
 boot.elf: start.o
-	gcc -m32 -T linker.ld -Wl,-N -o boot.elf -ffreestanding -nostdlib start.o
+	gcc $(CFLAGS) -T $(basename $@).ld -o $@ start.o
 
-start.o: start.S
-	as --32 -march=i386 -o start.o start.S
+%.o: %.S
+	as $(ASFLAGS) -o $@ $^
 
+%.o: kernel/%.c
+	gcc -c $(CFLAGS) -o $@ $^
 
-kernel.bin: kernel.elf
-	objcopy -O binary -j .text kernel.elf kernel.bin
+%.o: kernel/%.S
+	as $(ASFLAGS) -o $@ $^
 
-kernel.elf: main.o
-	gcc -fno-pie -m32 -T kernel.ld -Wl,-N -o kernel.elf -ffreestanding -nostdlib main.o kernel/main.c kernel16.o
-
-main.o: kernel/main.S
-	as --32 -march=i386 -o main.o kernel/main.S
-	as --32 -march=i386 -o kernel16.o kernel/kernel16.S
+kernel.elf: $(KOBJS)
+	gcc $(CFLAGS) -T $(basename $@).ld -o $@ $^
 
 image: kernel.bin boot.bin
 	dd if=/dev/zero of=floppy.img bs=512 count=2880
@@ -29,6 +34,6 @@ image: kernel.bin boot.bin
 
 clean:
 	rm boot.bin boot.elf start.o main.o kernel.elf floppy.img kernel.bin \
-		kernel16.o
+		kernel16.o kmain.o
 
 .PHONY: clean all image
