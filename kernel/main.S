@@ -41,6 +41,7 @@
 .type _start,@function
 
 .extern kmain
+.extern idt_desc
 
 _start:
     mov eax, 0x10
@@ -91,7 +92,10 @@ retfromrealcall16:
 
     mov eax, [stack_pointer]
     mov esp, eax
-    
+
+    mov eax, offset idt_desc
+    lidt [eax]
+
     pop es
     popad
     ret

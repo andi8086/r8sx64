@@ -56,7 +56,8 @@ void kmain(void)
     
     setup_idt();
     load_idt(&idt_desc);
-    //realcall();
+    realcall();
+    asm("int $0x20");
     while(1);
 
 }

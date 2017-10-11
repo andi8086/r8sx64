@@ -26,9 +26,10 @@ realcall16:
     push bx
     
     mov eax, cr0
+    and eax, 0x7FFFFFFF
+    mov cr0, eax
     and al, 0xFE
     mov cr0, eax
-
     retf    
 
 enter_realmode:
@@ -40,6 +41,9 @@ enter_realmode:
     mov gs, ax
     mov ss, ax
     mov sp, 0x1000
+
+    mov eax, offset r_idt_descriptor
+    lidt [eax]
 
     # do real mode stuff here
 
@@ -57,3 +61,10 @@ enter_realmode:
     mov cr0, eax
 
     jmp 0x08:retfromrealcall16  
+
+
+# IDT descriptor for real mode IVT
+
+r_idt_descriptor: .word 0x3FF
+                r_idt_offset: .long 0x00000000
+
