@@ -59,7 +59,7 @@ _start:
     mov gs, eax
     mov eax, 0x18
     mov ss, eax
-    mov esp, 0x7BFF
+    mov esp, 0x101FFF
     mov ebp, esp
 
     mov eax, 0xDEADBEEF
@@ -160,8 +160,8 @@ gdtentry1:  .word 0x5FFF, 0x0000
 gdtentry2:  .word 0xFFFF, 0x0000
             .byte 0, 0b10010011, 0b11001111, 0
 
-gdtentry_ss: .word 0x5FFF, 0x7C00
-             .byte 0, 0b10010111, 0b01000000, 0
+gdtentry_ss: .word 0xFFFF, 0x2000
+             .byte 0x10, 0b10010111, 0b01001111, 0
 
 gdtentry_cs16: .word 0xFFFF, 0x0000
                .byte 0, 0b10011001, 0b000000, 0

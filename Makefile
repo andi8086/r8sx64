@@ -7,8 +7,11 @@ KOBJS = main.o kmain.o kernel16.o pic8259.o video16.o video.o
 
 all: image
 
-%.bin: %.elf
+boot.bin: boot.elf
 	objcopy -O binary -j .text $^ $@
+
+kernel.bin: kernel.elf
+	objcopy -O binary $^ $@
 
 boot.elf: start.o
 	gcc $(CFLAGS) -T $(basename $@).ld -o $@ start.o
@@ -33,7 +36,6 @@ image: kernel.bin boot.bin
 	bochs -f bochs.rc
 
 clean:
-	rm boot.bin boot.elf start.o main.o kernel.elf floppy.img kernel.bin \
-		kernel16.o kmain.o
+	@rm -f *.bin *.o *.elf *.img
 
 .PHONY: clean all image

@@ -15,6 +15,7 @@ realcall16:
     # return to real mode
     cli
 
+    # load 16-bit mode data selectors
     mov eax, 0x28
     mov ds, eax
     mov es, eax
@@ -29,13 +30,16 @@ realcall16:
     mov bx, offset enter_realmode
     push bx
 
+    # first deactivate paging
     mov eax, cr0
     and eax, 0x7FFFFFFF
     mov cr0, eax
+
+    # 2nd disable protected mode
     and al, 0xFE
     mov cr0, eax
 
-    # will return to 0x0000:enter_realmode
+    # will return to 0x0000:enter_realmode and flush CS
     retf
 
 enter_realmode:

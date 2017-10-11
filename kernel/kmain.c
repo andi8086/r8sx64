@@ -50,6 +50,52 @@ void setup_paging(void)
 
 }
 
+unsigned short cursor_row;
+unsigned short cursor_col;
+
+
+void puts(char c)
+{
+    volatile char *vmem = 0xB8000;
+
+    switch(c) {   
+    case '\n':
+        cursor_col = 1;
+        cursor_row++;
+        break; 
+    default:
+        *(vmem + (cursor_row-1) * 160 + (cursor_col-1) * 2) = c;
+        cursor_col++;
+        if (cursor_col > 80) {
+            cursor_col = 1;
+            cursor_row++;
+        }
+        break;
+    }
+}
+
+void printf(const char *str)
+{
+    char *s = str;
+    do {
+        puts(*s);
+    } while(*(s++));
+
+}
+
+void clrscr(void)
+{
+    volatile uint16_t *vmem = 0xB8000;
+
+    do {
+        *vmem = 0x0700;
+    } while(++vmem < 0xBFFFF);
+
+    cursor_row = 1;
+    cursor_col = 1;
+}
+
+char* startmsg = "Starting Reichel DOS ...\n"; 
 
 void kmain(void)
 {
@@ -61,19 +107,14 @@ void kmain(void)
     setup_idt();
     load_idt(&idt_desc);
 
-    psvm.video_mode = 0x93;
+    psvm.video_mode = 0x03;
     rcall.realfunc = set_video_mode;
     rcall.params = &psvm;
     realcall(&rcall);
 
-    for (uint16_t i = 0; i < 320; i++) {
-        for (uint16_t j = 0; j < 200; j++) {
-            gd_put_pixel(i, j, 0xAA);
-        }
-    }
+    clrscr();
+    printf(startmsg);
 
-    rcall.realfunc = print_video_text;
-    realcall(&rcall);
 
     asm("int $0x20");
     while(1);
